@@ -89,7 +89,7 @@ InitGraphics (
 
   ASSERT (LoaderParams != NULL);
 
-  STATIC EFI_GRAPHICS_OUTPUT_BLT_PIXEL mBlackColour = {0x00, 0x00, 0x00, 0x00};
+  STATIC EFI_GRAPHICS_OUTPUT_BLT_PIXEL mBlackColour = {0xAA, 0xAA, 0x00, 0x00};
 
   //
   // Obtain graphics output protocol.
@@ -113,6 +113,25 @@ InitGraphics (
   //
   // Hint: Use GetMode/SetMode functions.
   //
+
+  DEBUG ((DEBUG_ERROR, "JOS: InitGraphics: Hello world\n"));
+
+  UINTN newHorizontalResolution = 800;
+  UINTN newVerticalResolution = 600;
+
+  UINTN SizeOfInfo;
+  EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *Info;
+  for (INT32 myMode = 0; myMode < GraphicsOutput->Mode->MaxMode; myMode++) {
+      Status = GraphicsOutput->QueryMode(GraphicsOutput, myMode, &SizeOfInfo, &Info);
+      if (EFI_ERROR(Status)) {
+          continue;
+      }
+
+      if ((Info->HorizontalResolution == newHorizontalResolution) && (Info->VerticalResolution == newVerticalResolution)) {
+          Status = GraphicsOutput->SetMode(GraphicsOutput, myMode);
+          break;
+      }
+  }
 
 
   //
@@ -978,13 +997,13 @@ UefiMain (
   VOID               *GateData;
 
 #if 1 ///< Uncomment to await debugging
-  volatile BOOLEAN   Connected;
+//  volatile BOOLEAN   Connected;
   DEBUG ((DEBUG_INFO, "JOS: Awaiting debugger connection\n"));
 
-  Connected = FALSE;
-  while (!Connected) {
-    ;
-  }
+//  Connected = FALSE;
+//  while (!Connected) {
+//    ;
+//  }
 #endif
 
   Status = gRT->GetTime (&Now, NULL);
