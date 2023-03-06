@@ -20,7 +20,6 @@ int mon_help(int argc, char **argv, struct Trapframe *tf);
 int mon_kerninfo(int argc, char **argv, struct Trapframe *tf);
 int mon_backtrace(int argc, char **argv, struct Trapframe *tf);
 int mon_hello(int argc, char **argv, struct Trapframe *tf);
-int mon_shorttrace(int argc, char **argv, struct Trapframe *tf);
 
 struct Command {
     const char *name;
@@ -34,7 +33,6 @@ static struct Command commands[] = {
         {"kerninfo", "Display information about the kernel", mon_kerninfo},
         {"backtrace", "Print stack backtrace", mon_backtrace},
         {"hello", "Print hello", mon_hello},
-        {"shorttrace", "Print short stack backtrace (rbp + rip)", mon_shorttrace},
 };
 #define NCOMMANDS (sizeof(commands) / sizeof(commands[0]))
 
@@ -68,37 +66,31 @@ mon_hello(int argc, char **argv, struct Trapframe *tf) {
     return 0;
 }
 
+// Example:
+// Stack backtrace:
+//   rbp 0000008041616f00  rip 00000080416041ef
+//     kern/monitor.c:124: monitor+429
+//   rbp 0000008041616fd0  rip 0000008041600294
+//     kern/init.c:123: i386_init+155
+//   rbp 0000008041616ff0  rip 0000008041600015
+//     kern/entry.S:21: <unknown>+0
 int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf) {
     // LAB 2: Your code here
 
-    uint64_t rbp = read_rbp();
-    uint64_t rip = read_rip(); // нашел эту функцию в inc/x86
+    uintptr_t rbp = read_rbp();
 
     cprintf("Stack backtrace:\n");
     while (rbp != 0) {
+        uintptr_t rip  = *((uintptr_t*) rbp + 1);
+
+        struct Ripdebuginfo info;
+        //  ищет значение RIP в таблице символов и возвращает отладочную информацию для этого адреса.
+        debuginfo_rip(rip, &info);
         cprintf("  rbp %016lx  rip %016lx\n", rbp, rip);
+        cprintf("\t %s:%d: %.*s+%ld\n", info.rip_file, info.rip_line, info.rip_fn_namelen, info.rip_fn_name, rip - info.rip_fn_addr);
 
-        rip = *(uint64_t *)(rbp + 8);
-        rbp = *(uint64_t *)(rbp);
-    }
-
-    return 0;
-}
-
-// В главе "СТЕК" сказано добавить НОВУЮ функцию
-int
-mon_shorttrace(int argc, char **argv, struct Trapframe *tf) {
-
-    uint64_t rbp = read_rbp();
-    uint64_t rip = read_rip(); // нашел эту функцию в inc/x86
-
-    cprintf("Stack backtrace:\n");
-    while (rbp != 0) {
-        cprintf("  rbp %016lx  rip %016lx\n", rbp, rip);
-
-        rip = *(uint64_t *)(rbp + 8);
-        rbp = *(uint64_t *)(rbp);
+        rbp = *(uintptr_t *)(rbp);
     }
 
     return 0;
