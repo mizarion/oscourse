@@ -19,6 +19,7 @@
 int mon_help(int argc, char **argv, struct Trapframe *tf);
 int mon_kerninfo(int argc, char **argv, struct Trapframe *tf);
 int mon_backtrace(int argc, char **argv, struct Trapframe *tf);
+int mon_hello(int argc, char **argv, struct Trapframe *tf);
 
 struct Command {
     const char *name;
@@ -31,6 +32,7 @@ static struct Command commands[] = {
         {"help", "Display this list of commands", mon_help},
         {"kerninfo", "Display information about the kernel", mon_kerninfo},
         {"backtrace", "Print stack backtrace", mon_backtrace},
+        {"hello", "Print hello", mon_hello},
 };
 #define NCOMMANDS (sizeof(commands) / sizeof(commands[0]))
 
@@ -54,6 +56,13 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf) {
     cprintf("  edata   %16lx (virt)  %16lx (phys)\n", (unsigned long)edata, (unsigned long)edata - KERN_BASE_ADDR);
     cprintf("  end     %16lx (virt)  %16lx (phys)\n", (unsigned long)end, (unsigned long)end - KERN_BASE_ADDR);
     cprintf("Kernel executable memory footprint: %luKB\n", (unsigned long)ROUNDUP(end - entry, 1024) / 1024);
+    return 0;
+}
+
+// Добавьте свою команду, которая выводит в консоль произвольный текст.
+int
+mon_hello(int argc, char **argv, struct Trapframe *tf) {
+    cprintf("Hello from monitor!\n");
     return 0;
 }
 
