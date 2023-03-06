@@ -20,6 +20,7 @@ int mon_help(int argc, char **argv, struct Trapframe *tf);
 int mon_kerninfo(int argc, char **argv, struct Trapframe *tf);
 int mon_backtrace(int argc, char **argv, struct Trapframe *tf);
 int mon_hello(int argc, char **argv, struct Trapframe *tf);
+int mon_shorttrace(int argc, char **argv, struct Trapframe *tf);
 
 struct Command {
     const char *name;
@@ -33,6 +34,7 @@ static struct Command commands[] = {
         {"kerninfo", "Display information about the kernel", mon_kerninfo},
         {"backtrace", "Print stack backtrace", mon_backtrace},
         {"hello", "Print hello", mon_hello},
+        {"shorttrace", "Print short stack backtrace (rbp + rip)", mon_shorttrace},
 };
 #define NCOMMANDS (sizeof(commands) / sizeof(commands[0]))
 
@@ -69,6 +71,35 @@ mon_hello(int argc, char **argv, struct Trapframe *tf) {
 int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf) {
     // LAB 2: Your code here
+
+    uint64_t rbp = read_rbp();
+    uint64_t rip = read_rip(); // нашел эту функцию в inc/x86
+
+    cprintf("Stack backtrace:\n");
+    while (rbp != 0) {
+        cprintf("  rbp %016lx  rip %016lx\n", rbp, rip);
+
+        rip = *(uint64_t *)(rbp + 8);
+        rbp = *(uint64_t *)(rbp);
+    }
+
+    return 0;
+}
+
+// В главе "СТЕК" сказано добавить НОВУЮ функцию
+int
+mon_shorttrace(int argc, char **argv, struct Trapframe *tf) {
+
+    uint64_t rbp = read_rbp();
+    uint64_t rip = read_rip(); // нашел эту функцию в inc/x86
+
+    cprintf("Stack backtrace:\n");
+    while (rbp != 0) {
+        cprintf("  rbp %016lx  rip %016lx\n", rbp, rip);
+
+        rip = *(uint64_t *)(rbp + 8);
+        rbp = *(uint64_t *)(rbp);
+    }
 
     return 0;
 }
