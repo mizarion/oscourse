@@ -84,6 +84,10 @@ debuginfo_rip(uintptr_t addr, struct Ripdebuginfo *info) {
     res = function_by_info(&addrs, addr - 5, offset, &tmp_buf, &func_offset);
     if (res < 0) goto error;
     strncpy(info->rip_fn_name, tmp_buf, sizeof(info->rip_fn_name));
+    // write the size of the function name
+    info->rip_fn_namelen=sizeof(info->rip_fn_name);
+    // write func adr
+    info->rip_fn_addr=func_offset;
 
 error:
     return res;
