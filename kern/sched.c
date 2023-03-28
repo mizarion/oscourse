@@ -25,7 +25,32 @@ sched_yield(void) {
      * below to halt the cpu */
 
     // LAB 3: Your code here:
-    env_run(&envs[0]);
+    //    env_run(&envs[0]);
+
+    int current_position = 0;
+    if (curenv) {
+        // из env.h:
+        // * The environment index ENVX(eid) equals the environment's offset in the
+        // * 'envs[]' array.  The uniqueifier distinguishes environments that were
+        // * created at different times, but share the same environment index.
+        current_position = ENVX(curenv->env_id) + 1;
+    }
+
+    // * Search through 'envs' for an ENV_RUNNABLE environment in
+    // * circular fashion starting just after the env was
+    // * last running.  Switch to the first such environment found.
+    for (int i = 0; i < NENV; i++) {
+        int real_position = (current_position + i) % NENV;
+        if (envs[real_position].env_status == ENV_RUNNABLE) {
+            env_run(&envs[real_position]);
+        }
+    }
+    // * If no envs are runnable, but the environment previously
+    // * running is still ENV_RUNNING, it's okay to
+    // * choose that environment.
+    if (curenv && curenv->env_status == ENV_RUNNING) {
+        env_run(curenv);
+    }
 
     cprintf("Halt\n");
 
