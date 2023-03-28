@@ -90,6 +90,31 @@ env_init(void) {
 
     // LAB 3: Your code here
 
+    env_free_list = NULL;
+    for (int i = NENV - 1; i >= 0; i--) {
+        envs[i].env_id = 0;
+        envs[i].env_status = ENV_FREE;
+        envs[i].env_link = env_free_list;
+        env_free_list = &envs[i];
+    }
+
+    // Среда 0 (ядра) использует отдельный сегмент кода и данных
+    envs[0].env_type = ENV_TYPE_KERNEL;
+    envs[0].env_tf.tf_ds = 0;
+    envs[0].env_tf.tf_es = 0;
+    envs[0].env_tf.tf_ss = 0;
+    envs[0].env_tf.tf_cs = 0 | GD_KT;
+
+    // Остальные среды используют один и тот же код, но разные сегменты данных
+    for (int i = 1; i < NENV; i++) {
+        envs[i].env_type = ENV_TYPE_USER;
+        envs[i].env_tf.tf_ds = GD_UD | 3;
+        envs[i].env_tf.tf_es = GD_UD | 3;
+        envs[i].env_tf.tf_ss = GD_UD | 3;
+        envs[i].env_tf.tf_cs = GD_UT | 3;
+    }
+
+    cprintf("env_init: array of %d envs\n", NENV);
 }
 
 /* Allocates and initializes a new environment.
@@ -221,6 +246,20 @@ static int
 load_icode(struct Env *env, uint8_t *binary, size_t size) {
     // LAB 3: Your code here
 
+    // Декодирует двоичный ELF-образ так же, как это уже делает загрузчик,
+    // и загружает его содержимое в адресное пространство нового процесса.
+    // Пока не следует обращать внимания на функцию bind_functions.
+
+    cprintf("load_icode: debug \n");
+
+    struct Elf *elf = (struct Elf *)binary;
+    if (elf->e_magic != ELF_MAGIC) {
+        panic("load_icode: elf != ELF_MAGIC");
+        return -E_INVALID_EXE;
+    }
+
+    // todo:...
+
     return 0;
 }
 
@@ -234,6 +273,12 @@ void
 env_create(uint8_t *binary, size_t size, enum EnvType type) {
     // LAB 3: Your code here
 
+    // Выделяет процесс с помощью env_alloc и загружает в него двоичный ELF-образ путем вызова load_icode.
+    struct Env *env;
+    if (env_alloc(&env, 0, type) < 0) {
+        panic("env_create: env_alloc failed");
+    }
+    load_icode(env, binary, size);
 }
 
 
@@ -355,5 +400,19 @@ env_run(struct Env *env) {
 
     // LAB 3: Your code here
 
-    while(1) {}
+    // STEP 1
+    // 1. Set the current environment (if any) back to
+    // ENV_RUNNABLE if it is ENV_RUNNING
+    if (curenv && curenv->env_status == ENV_RUNNING) {
+        curenv->env_status = ENV_RUNNABLE;
+    }
+    // 2. Set 'curenv' to the new environment,
+    curenv = env;
+    // 3. Set its status to ENV_RUNNING,
+    env->env_status = ENV_RUNNING;
+    // 4. Update its 'env_runs' counter,
+    env->env_runs++;
+
+    // Step 2: Use env_pop_tf() to restore the environment's registers and starting execution of process.
+    env_pop_tf(&env->env_tf);
 }
