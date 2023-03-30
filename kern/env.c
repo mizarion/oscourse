@@ -281,7 +281,10 @@ env_create(uint8_t *binary, size_t size, enum EnvType type) {
     if (env_alloc(&env, 0, type) < 0) {
         panic("env_create: env_alloc failed");
     }
+    // loads the named elf binary into it with load_icode
     load_icode(env, binary, size);
+    // sets its env_type
+    env->env_type = type;
 }
 
 
