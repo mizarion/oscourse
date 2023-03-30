@@ -311,6 +311,18 @@ env_destroy(struct Env *env) {
 
     // LAB 3: Your code here
 
+    if (env->env_status == ENV_RUNNING && env != curenv) {
+        env->env_status = ENV_DYING;
+        return;
+    } else if (env->env_status == ENV_DYING) {
+        env_free(env);
+        // * If env was the current one, then runs a new environment
+        // * (and does not return to the caller)
+        if (env == curenv) {
+            curenv = NULL;
+            sched_yield();
+        }
+    }
 }
 
 #ifdef CONFIG_KSPACE

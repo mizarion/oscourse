@@ -74,8 +74,12 @@ sys_yield:
 .globl sys_exit
 .type  sys_exit, @function
 sys_exit:
-    jmp .
+# Вызываем функцию csys_exit из ядра для завершения работы процесса и освобождения ресурсов
+    cli
+    call csys_exit
 
+# Завершаем выполнение процесса без сохранения контекста
+    jmp .
 #endif
 
 
