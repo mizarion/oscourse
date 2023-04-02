@@ -261,7 +261,38 @@ load_icode(struct Env *env, uint8_t *binary, size_t size) {
         return -E_INVALID_EXE;
     }
 
-    // todo:...
+    struct Proghdr *ph = (struct Proghdr *)((void *)elf + elf->e_phoff);
+    struct Proghdr *ph_end = ph + elf->e_phnum;
+
+    for (; ph < ph_end; ph++) {
+        // * You should only load segments with ph->p_type == ELF_PROG_LOAD.
+        if (ph->p_type == ELF_PROG_LOAD) {
+            cprintf("load_icode: ph->p_type == ELF_PROG_LOAD \n");
+
+            // *   Each segment's address can be found in ph->p_va
+            // *   and its size in memory can be found in ph->p_memsz.
+            // *   The ph->p_filesz bytes from the ELF binary, starting at
+            // *   'binary + ph->p_offset', should be copied to address
+            // *   ph->p_va.
+            memcpy((void *)ph->p_va, (void *)binary + ph->p_offset, ph->p_filesz);
+
+            // Any remaining memory bytes should be cleared to zero.
+            // (The ELF header should have ph->p_filesz <= ph->p_memsz.)
+            if (ph->p_memsz > ph->p_filesz) {
+                memset((void *)ph->p_va + ph->p_filesz, 0, ph->p_memsz - ph->p_filesz);
+            }
+
+        } else {
+            cprintf("load_icode: ph->p_type != ELF_PROG_LOAD \n");
+        }
+    }
+
+    // *   You must also do something with the program's entry point,
+    // *   to make sure that the environment starts executing there.
+    env->env_tf.tf_rip = elf->e_entry;
+
+    // * Finally, this function maps one page for the program's initial stack.
+    // todo?
 
     return 0;
 }
