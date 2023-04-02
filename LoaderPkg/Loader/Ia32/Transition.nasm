@@ -103,8 +103,7 @@ ASM_PFX(CallKernelThroughGateAsm):
     lgdt [GDT_DESCRIPTOR]
 
     ; update CS to LINEAR_CODE_SEL
-    mov ax, LINEAR_CODE_SEL
-    mov cs, eax
+    jmp     LINEAR_CODE_SEL:dword $AsmWithOurGdt
 
 AsmWithOurGdt:
 
@@ -148,8 +147,7 @@ AsmWithOurGdt:
     ; 8. Transition to 64-bit mode by updating CS with LINEAR_CODE64_SEL.
     ; LAB 2: Your code here:
 
-    mov eax, LINEAR_CODE64_SEL
-    mov cs, eax
+    jmp     LINEAR_CODE64_SEL:dword $AsmInLongMode
 
 AsmInLongMode:
     BITS 64
