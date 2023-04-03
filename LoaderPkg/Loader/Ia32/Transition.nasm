@@ -137,6 +137,17 @@ AsmWithOurGdt:
     ; 6. Enable long mode (LME) and execute protection (NXE) via the EFER MSR register.
     ; LAB 2: Your code here:
 
+    ; Чтение EFER в регистры edx и eax
+    mov ecx, 0xC0000080 ; указываем адрес регистра EFER MSR
+    rdmsr
+
+    or eax, 0x1000       ; Устанавливаем бит LME
+    or eax, 0x8000       ; Устанавливаем бит NXE
+
+    ; Сохраняем изменения / записываем в регистр EFER MSR
+    wrmsr
+
+
     ; 7. Enable paging as it is required in 64-bit mode.
     ; LAB 2: Your code here:
 
