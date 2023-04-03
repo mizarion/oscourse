@@ -103,7 +103,7 @@ ASM_PFX(CallKernelThroughGateAsm):
     lgdt [GDT_DESCRIPTOR]
 
     ; update CS to LINEAR_CODE_SEL
-    jmp     LINEAR_CODE_SEL:dword $AsmWithOurGdt
+    jmp LINEAR_CODE_SEL:AsmWithOurGdt
 
 AsmWithOurGdt:
 
@@ -122,8 +122,8 @@ AsmWithOurGdt:
     ; LAB 2: Your code here:
 
     mov eax, cr4
-    or eax, 0x00000020 ; устанавливаем 5 бит (PAE) в 1
-    or eax, 0x00000080 ; устанавливаем 7 бит (PGE) в 1
+    or eax, (1<<5) ; устанавливаем 5 бит (PAE) в 1
+    or eax, (1<<7) ; устанавливаем 7 бит (PGE) в 1
     mov cr4, eax
 
 
@@ -141,8 +141,8 @@ AsmWithOurGdt:
     mov ecx, 0xC0000080 ; указываем адрес регистра EFER MSR
     rdmsr
 
-    or eax, 0x1000       ; Устанавливаем бит LME
-    or eax, 0x8000       ; Устанавливаем бит NXE
+    or eax, (1<<8)        ; Устанавливаем бит LME (8) в 1
+    or eax, (1<<11)       ; Устанавливаем бит NXE (11) в 1
 
     ; Сохраняем изменения / записываем в регистр EFER MSR
     wrmsr
@@ -158,7 +158,7 @@ AsmWithOurGdt:
     ; 8. Transition to 64-bit mode by updating CS with LINEAR_CODE64_SEL.
     ; LAB 2: Your code here:
 
-    jmp     LINEAR_CODE64_SEL:dword $AsmInLongMode
+    jmp LINEAR_CODE64_SEL:AsmInLongMode
 
 AsmInLongMode:
     BITS 64
