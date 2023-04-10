@@ -104,5 +104,14 @@ find_function(const char *const fname) {
 
     // LAB 3: Your code here:
 
-    return 0;
+    struct Dwarf_Addrs addrs;
+    load_kernel_dwarf_info(&addrs);
+
+    uintptr_t func_offset;
+    int x = address_by_fname(&addrs, fname, &func_offset);
+    if (x >= 0) {
+        return x;
+    }
+    x = naive_address_by_fname(&addrs, fname, &func_offset);
+    return x;
 }

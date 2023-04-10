@@ -202,6 +202,50 @@ bind_functions(struct Env *env, uint8_t *binary, size_t size, uintptr_t image_st
 
     /* NOTE: find_function from kdebug.c should be used */
 
+    // Ваша задача состоит в реализации кода, который по адресам глобальных указателей на функции запишет адреса функций ядра,
+    // чтобы процессам был доступен любой запрошенный набор функций.
+    // Для этого необходимо сначала получить адреса глобальных переменных с конкретными названиями.
+    // Сейчас они получены из файлов obj/prog/test1.sym и obj/prog/test2.sym, и могут не совпадать с теми,
+    // которые будут сгенерированы в вашем случае.
+    // В функции bind_functions нужно получать адреса глобальных переменных (подобно тому, как это делают программы nm -n, objdump -x),
+    // и каждой глобальной переменной, чьё имя совпадает с именем одной из функций ядра, присваивать адрес последней.
+    // Адреса функций ядра должны быть получены из отладочной информации, с которой вы уже научились работать в прошлой лабораторной работе.
+    // Для этого необходимо реализовать функции find_function и dwarf_find_function (kern/kdebug.c)
+    // и дополнить функцию address_by_fname (kern/dwarf.c) нахождением значения атрибута DW_AT_low_pc, содержащего адрес функции.
+    //
+    // Примечание: обратите внимание на функции в файле lib/string.c, на раздел Symbol Table в спецификации Elf формата;
+    // Строки, не завершенные нулем, можно легко вывести с помощью функции printf следующим образом: вызов printf(“%.*s”, length, string);
+    // выведет максимум length байт из строки string (более подробную информацию о работе функции printf можно получить на её man-странице).
+
+    cprintf("bind_functions: debug \n");
+
+    struct Elf *elf = (struct Elf *)binary;
+    struct Secthdr *sh = (struct Secthdr *)((uint8_t *)elf + elf->e_shoff);
+    for (int i = 0; i < elf->e_shnum; i++) {
+        if (sh[i].sh_type == ELF_SHT_SYMTAB) {
+            struct Elf64_Sym *symtab = (struct Elf64_Sym *)((uint8_t *)elf + sh[i].sh_offset);
+            char *strtab = (char *)(binary + sh[sh[i].sh_link].sh_offset);
+
+            for (int j = 0; j < sh[i].sh_size / sizeof(struct Elf64_Sym); j++) {
+                char *name = strtab + symtab[j].st_name;
+                // todo: реализовать
+                //  find_function +
+                uintptr_t addr = find_function(name);
+                cprintf("bind_functions: addr %ld \n", addr);
+
+                // each binding must be performed within the image_start/image_end range.
+                if (addr >= image_start && addr < image_end) {
+                    symtab[j].st_value = addr;
+                    cprintf("bind_functions: symtab[j].st_value == addr\n");
+                }
+                else {
+                    cprintf("bind_functions: symtab[j].st_value=%ld \n", symtab[j].st_value);
+                }
+                cprintf("bind_functions: Symbol name: %.*s\n", (int)strlen(name), name);
+            }
+        }
+    }
+
     return 0;
 }
 
@@ -291,8 +335,9 @@ load_icode(struct Env *env, uint8_t *binary, size_t size) {
     // *   to make sure that the environment starts executing there.
     env->env_tf.tf_rip = elf->e_entry;
 
-    // * Finally, this function maps one page for the program's initial stack.
-    // todo?
+    uintptr_t image_start = ph->p_va;
+    uintptr_t image_end = ph->p_va + ph->p_memsz;
+    bind_functions(env, binary, size, image_start, image_end);
 
     return 0;
 }
