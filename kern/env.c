@@ -14,6 +14,8 @@
 #include <kern/macro.h>
 #include <kern/traceopt.h>
 
+#include <inc/dwarf.h>
+
 /* Currently active environment */
 struct Env *curenv = NULL;
 
@@ -227,24 +229,26 @@ bind_functions(struct Env *env, uint8_t *binary, size_t size, uintptr_t image_st
             char *strtab = (char *)(binary + sh[sh[i].sh_link].sh_offset);
 
             for (int j = 0; j < sh[i].sh_size / sizeof(struct Elf64_Sym); j++) {
-                char *name = strtab + symtab[j].st_name;
-                // todo: реализовать
-                //  find_function +
-                uintptr_t addr = find_function(name);
-                cprintf("bind_functions: addr %ld \n", addr);
+                //                // пропускаем все символы, которые не являются функциями
+                //                if ((symtab[j].st_info & 0xf) != STT_FUNC) {
+                //                    continue;
+                //                }
 
-                // each binding must be performed within the image_start/image_end range.
-                if (addr >= image_start && addr < image_end) {
+                //                cprintf("STRTAB: %s\n", strtab + 3);
+                char *name = strtab + symtab[j].st_name;
+                uintptr_t addr = find_function(name);
+
+                // Если адрес был найден и не принадлежит образу, привязываем адрес функции в ядре
+                if (addr != -E_NO_ENT && (addr < image_start || addr >= image_end)) {
                     symtab[j].st_value = addr;
-                    cprintf("bind_functions: symtab[j].st_value == addr\n");
+                    cprintf("Found kernel function!!!\n");
                 }
-                else {
-                    cprintf("bind_functions: symtab[j].st_value=%ld \n", symtab[j].st_value);
-                }
-                cprintf("bind_functions: Symbol name: %.*s\n", (int)strlen(name), name);
+                cprintf("bind_functions: symtab[j].st_value=%lu \n", symtab[j].st_value);
             }
         }
     }
+
+    cprintf("end of bind_function\n");
 
     return 0;
 }
@@ -308,6 +312,9 @@ load_icode(struct Env *env, uint8_t *binary, size_t size) {
     struct Proghdr *ph = (struct Proghdr *)((void *)elf + elf->e_phoff);
     struct Proghdr *ph_end = ph + elf->e_phnum;
 
+    uintptr_t image_start = 0;
+    uintptr_t image_end = 0;
+
     for (; ph < ph_end; ph++) {
         // * You should only load segments with ph->p_type == ELF_PROG_LOAD.
         if (ph->p_type == ELF_PROG_LOAD) {
@@ -318,6 +325,17 @@ load_icode(struct Env *env, uint8_t *binary, size_t size) {
             // *   The ph->p_filesz bytes from the ELF binary, starting at
             // *   'binary + ph->p_offset', should be copied to address
             // *   ph->p_va.
+
+            // Ищем начало образа перебирая все сегменты загружаемого файла
+            if (image_start == 0 || ph->p_va < image_start) {
+                image_start = ph->p_va;
+            }
+            // Ищем конец образа перебирая все сегменты загружаемого файла
+            uintptr_t seg_end = ph->p_va + ph->p_memsz;
+            if (seg_end > image_end) {
+                image_end = seg_end;
+            }
+
             memcpy((void *)ph->p_va, (void *)binary + ph->p_offset, ph->p_filesz);
 
             // Any remaining memory bytes should be cleared to zero.
@@ -334,9 +352,6 @@ load_icode(struct Env *env, uint8_t *binary, size_t size) {
     // *   You must also do something with the program's entry point,
     // *   to make sure that the environment starts executing there.
     env->env_tf.tf_rip = elf->e_entry;
-
-    uintptr_t image_start = ph->p_va;
-    uintptr_t image_end = ph->p_va + ph->p_memsz;
     bind_functions(env, binary, size, image_start, image_end);
 
     return 0;
