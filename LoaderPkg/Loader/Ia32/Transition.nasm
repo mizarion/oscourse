@@ -103,8 +103,7 @@ ASM_PFX(CallKernelThroughGateAsm):
     lgdt [GDT_DESCRIPTOR]
 
     ; update CS to LINEAR_CODE_SEL
-    mov ax, LINEAR_CODE_SEL
-    mov cs, eax
+    jmp LINEAR_CODE_SEL:AsmWithOurGdt
 
 AsmWithOurGdt:
 
@@ -123,8 +122,8 @@ AsmWithOurGdt:
     ; LAB 2: Your code here:
 
     mov eax, cr4
-    or eax, 0x00000020 ; устанавливаем 5 бит (PAE) в 1
-    or eax, 0x00000080 ; устанавливаем 7 бит (PGE) в 1
+    or eax, (1<<5) ; устанавливаем 5 бит (PAE) в 1
+    or eax, (1<<7) ; устанавливаем 7 бит (PGE) в 1
     mov cr4, eax
 
 
@@ -138,6 +137,17 @@ AsmWithOurGdt:
     ; 6. Enable long mode (LME) and execute protection (NXE) via the EFER MSR register.
     ; LAB 2: Your code here:
 
+    ; Чтение EFER в регистры edx и eax
+    mov ecx, 0xC0000080 ; указываем адрес регистра EFER MSR
+    rdmsr
+
+    or eax, (1<<8)        ; Устанавливаем бит LME (8) в 1
+    or eax, (1<<11)       ; Устанавливаем бит NXE (11) в 1
+
+    ; Сохраняем изменения / записываем в регистр EFER MSR
+    wrmsr
+
+
     ; 7. Enable paging as it is required in 64-bit mode.
     ; LAB 2: Your code here:
 
@@ -148,8 +158,7 @@ AsmWithOurGdt:
     ; 8. Transition to 64-bit mode by updating CS with LINEAR_CODE64_SEL.
     ; LAB 2: Your code here:
 
-    mov eax, LINEAR_CODE64_SEL
-    mov cs, eax
+    jmp LINEAR_CODE64_SEL:AsmInLongMode
 
 AsmInLongMode:
     BITS 64
