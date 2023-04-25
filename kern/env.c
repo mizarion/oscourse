@@ -173,9 +173,9 @@ env_alloc(struct Env **newenv_store, envid_t parent_id, enum EnvType type) {
     env->env_tf.tf_cs = GD_KT;
 
     // LAB 3: Your code here:
-     static uintptr_t stack_top = 0x2000000;
-     (*newenv_store)->env_tf.tf_rsp = stack_top;
-     stack_top -= 2 * PAGE_SIZE;
+    static uintptr_t stack_top = 0x2000000;
+    env->env_tf.tf_rsp = stack_top;
+    stack_top -= 2 * PAGE_SIZE;
 
 #else
     env->env_tf.tf_ds = GD_UD | 3;
@@ -229,10 +229,11 @@ bind_functions(struct Env *env, uint8_t *binary, size_t size, uintptr_t image_st
             char *strtab = (char *)(binary + sh[sh[i].sh_link].sh_offset);
 
             for (int j = 0; j < sh[i].sh_size / sizeof(struct Elf64_Sym); j++) {
-                //                // пропускаем все символы, которые не являются функциями
-                //                if ((symtab[j].st_info & 0xf) != STT_FUNC) {
-                //                    continue;
-                //                }
+                if (ELF64_ST_BIND(symtab[j].st_info) != STB_GLOBAL ||
+                    ELF64_ST_BIND(symtab[j].st_info) != STT_OBJECT ||
+                    symtab[j].st_size != sizeof(void (*)(void))) {
+                    continue;
+                }
 
                 //                cprintf("STRTAB: %s\n", strtab + 3);
                 char *name = strtab + symtab[j].st_name;
@@ -240,7 +241,7 @@ bind_functions(struct Env *env, uint8_t *binary, size_t size, uintptr_t image_st
 
                 // Если адрес был найден и не принадлежит образу, привязываем адрес функции в ядре
                 if (addr != -E_NO_ENT && (addr < image_start || addr >= image_end)) {
-                    symtab[j].st_value = addr;
+                    *(uintptr_t *)symtab[j].st_value = addr;
                     cprintf("Found kernel function!!!\n");
                 }
                 cprintf("bind_functions: symtab[j].st_value=%lu \n", symtab[j].st_value);
@@ -404,6 +405,7 @@ env_destroy(struct Env *env) {
      * it traps to the kernel. */
 
     // LAB 3: Your code here
+    env->env_status = ENV_DYING;
 
     if (env->env_status == ENV_RUNNING && env != curenv) {
         env->env_status = ENV_DYING;

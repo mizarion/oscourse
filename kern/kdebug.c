@@ -119,7 +119,7 @@ find_function(const char *const fname) {
     cprintf("address_by_fname code: %d\n", (int)x);
     cprintf("address_by_fname offset: %lu\n", (long unsigned int)func_offset);
     if (x == 0) {
-        uintptr_t func_address = (uintptr_t) addrs.pubnames_begin + func_offset;
+        uintptr_t func_address = (uintptr_t) func_offset;
         cprintf("address_by_fname address: %lx\n", func_address);
 
         cprintf(">>>>>>>>>>>>>>>>>>>FIND FUNCTION END<<<<<<<<<<<<<<<<<<<<\n");
@@ -131,7 +131,7 @@ find_function(const char *const fname) {
     cprintf("naive_address_by_fname offset: %lx\n", (long unsigned int)func_offset);
     if (x == 0) {
         cprintf("INVOKED2\n");
-        uintptr_t func_address = (uintptr_t) addrs.info_begin + func_offset;
+        uintptr_t func_address = (uintptr_t) func_offset;
         cprintf("naive_address_by_fname address: %lx\n", func_address);
 
         cprintf(">>>>>>>>>>>>>>>>>>>FIND FUNCTION END<<<<<<<<<<<<<<<<<<<<\n");
