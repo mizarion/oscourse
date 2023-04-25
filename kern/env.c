@@ -116,7 +116,6 @@ env_init(void) {
         envs[i].env_tf.tf_cs = GD_UT | 3;
     }
 
-    cprintf("env_init: array of %d envs\n", NENV);
 }
 
 /* Allocates and initializes a new environment.
@@ -219,7 +218,6 @@ bind_functions(struct Env *env, uint8_t *binary, size_t size, uintptr_t image_st
     // Строки, не завершенные нулем, можно легко вывести с помощью функции printf следующим образом: вызов printf(“%.*s”, length, string);
     // выведет максимум length байт из строки string (более подробную информацию о работе функции printf можно получить на её man-странице).
 
-    cprintf("bind_functions: debug \n");
 
     struct Elf *elf = (struct Elf *)binary;
     struct Secthdr *sh = (struct Secthdr *)((uint8_t *)elf + elf->e_shoff);
@@ -242,14 +240,10 @@ bind_functions(struct Env *env, uint8_t *binary, size_t size, uintptr_t image_st
                 // Если адрес был найден и не принадлежит образу, привязываем адрес функции в ядре
                 if (addr != -E_NO_ENT && (addr < image_start || addr >= image_end)) {
                     *(uintptr_t *)symtab[j].st_value = addr;
-                    cprintf("Found kernel function!!!\n");
                 }
-                cprintf("bind_functions: symtab[j].st_value=%lu \n", symtab[j].st_value);
             }
         }
     }
-
-    cprintf("end of bind_function\n");
 
     return 0;
 }
@@ -302,7 +296,6 @@ load_icode(struct Env *env, uint8_t *binary, size_t size) {
     // и загружает его содержимое в адресное пространство нового процесса.
     // Пока не следует обращать внимания на функцию bind_functions.
 
-    cprintf("load_icode: debug \n");
 
     struct Elf *elf = (struct Elf *)binary;
     if (elf->e_magic != ELF_MAGIC) {
@@ -319,7 +312,6 @@ load_icode(struct Env *env, uint8_t *binary, size_t size) {
     for (; ph < ph_end; ph++) {
         // * You should only load segments with ph->p_type == ELF_PROG_LOAD.
         if (ph->p_type == ELF_PROG_LOAD) {
-            cprintf("load_icode: ph->p_type == ELF_PROG_LOAD \n");
 
             // *   Each segment's address can be found in ph->p_va
             // *   and its size in memory can be found in ph->p_memsz.
@@ -345,8 +337,6 @@ load_icode(struct Env *env, uint8_t *binary, size_t size) {
                 memset((void *)ph->p_va + ph->p_filesz, 0, ph->p_memsz - ph->p_filesz);
             }
 
-        } else {
-            cprintf("load_icode: ph->p_type != ELF_PROG_LOAD \n");
         }
     }
 

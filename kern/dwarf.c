@@ -494,7 +494,6 @@ function_by_info(const struct Dwarf_Addrs *addrs, uintptr_t p, Dwarf_Off cu_offs
 
 int
 address_by_fname(const struct Dwarf_Addrs *addrs, const char *fname, uintptr_t *offset) {
-    cprintf("find name elf: %s\n", fname);
     const int flen = strlen(fname);
     if (!flen) return -E_INVAL;
 
@@ -561,7 +560,6 @@ address_by_fname(const struct Dwarf_Addrs *addrs, const char *fname, uintptr_t *
                 }
                 /* Find low_pc */
                 if (tag == DW_TAG_subprogram) {
-                    cprintf("======================> INVOKED DW_TAG_SUBPROGRAM\n");
                     /* At this point entry points to the beginning of function's DIE attributes
                      * and abbrev_entry points to abbreviation table entry corresponding to this DIE.
                      * Abbreviation table entry consists of pairs of unsigned LEB128 numbers, the first
@@ -579,7 +577,6 @@ address_by_fname(const struct Dwarf_Addrs *addrs, const char *fname, uintptr_t *
                         abbrev_entry += dwarf_read_uleb128(abbrev_entry, &form);
 
                         //                        uint64_t name = 0, form = 0, tag = 0;
-                        cprintf(" name: %lu\n", name);
                         if (name == DW_AT_low_pc) {
                             entry += dwarf_read_abbrev_entry(entry, form, &low_pc, sizeof(low_pc), address_size);
                             break;

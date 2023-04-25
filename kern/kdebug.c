@@ -107,37 +107,19 @@ find_function(const char *const fname) {
     struct Dwarf_Addrs addrs;
     load_kernel_dwarf_info(&addrs);
 
-    cprintf(">>>>>>>>>>>>>>>>>>>FIND FUNCTION START<<<<<<<<<<<<<<<<<<<<\n");
-    cprintf("addrs->info_begin %lx\n", (long unsigned int)(addrs.info_begin));
-    cprintf("addrs->info_end   %lx\n", (long unsigned int)(addrs.info_end));
-    cprintf("addrs->pubnames_begin %lx\n", (long unsigned int)(addrs.pubnames_begin));
-    cprintf("addrs->pubnames_end   %lx\n", (long unsigned int)(addrs.pubnames_end));
-
     uintptr_t func_offset;
 
     int x = address_by_fname(&addrs, fname, &func_offset);
-    cprintf("address_by_fname code: %d\n", (int)x);
-    cprintf("address_by_fname offset: %lu\n", (long unsigned int)func_offset);
     if (x == 0) {
         uintptr_t func_address = (uintptr_t) func_offset;
-        cprintf("address_by_fname address: %lx\n", func_address);
-
-        cprintf(">>>>>>>>>>>>>>>>>>>FIND FUNCTION END<<<<<<<<<<<<<<<<<<<<\n");
         return func_address;
     }
 
     x = naive_address_by_fname(&addrs, fname, &func_offset);
-    cprintf("naive_address_by_fname code: %d\n", (int)x);
-    cprintf("naive_address_by_fname offset: %lx\n", (long unsigned int)func_offset);
     if (x == 0) {
-        cprintf("INVOKED2\n");
         uintptr_t func_address = (uintptr_t) func_offset;
-        cprintf("naive_address_by_fname address: %lx\n", func_address);
-
-        cprintf(">>>>>>>>>>>>>>>>>>>FIND FUNCTION END<<<<<<<<<<<<<<<<<<<<\n");
         return func_address;
     }
 
-    cprintf(">>>>>>>>>>>>>>>>>>>FIND FUNCTION END<<<<<<<<<<<<<<<<<<<<\n");
     return x;
 }
