@@ -121,5 +121,26 @@ find_function(const char *const fname) {
         return func_address;
     }
 
+    uint8_t *symtab_begin = (uint8_t *)(uefi_lp->SymbolTableStart);
+    uint8_t *symtab_end   = (uint8_t *)(uefi_lp->SymbolTableEnd);
+    uint8_t *strtab_begin = (uint8_t *)(uefi_lp->StringTableStart);
+    uint8_t *strtab_end   = (uint8_t *)(uefi_lp->StringTableEnd);
+
+    char *strtab = (char *)(strtab_begin);
+
+    struct Elf64_Sym *symtab = (struct Elf64_Sym *)(symtab_begin);
+    int symtab_size = (symtab_end - symtab_begin) / sizeof(struct Elf64_Sym);
+    for (int i = 0; i < symtab_size; ++i) {
+        if (ELF64_ST_TYPE(symtab[i].st_info) != STT_FUNC) {
+            continue;
+        }
+
+        char *name = strtab + symtab[i].st_name;
+        if ((uint8_t*) name < strtab_end && strcmp(name, fname) == 0) {
+            func_offset = (uintptr_t) symtab[i].st_value;
+            return func_offset;
+        }
+    }
+
     return x;
 }
